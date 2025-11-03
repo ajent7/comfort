@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -11,19 +9,17 @@ exports.handler = async (event, context) => {
   try {
     const { feelings } = JSON.parse(event.body);
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `You are a gentle, warm, and deeply compassionate friend speaking to Reedaa, someone with a tender heart who sometimes struggles with difficult emotions. She's just shared: "${feelings}"
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are a gentle, warm, and deeply compassionate friend speaking to Reedaa, someone with a tender heart who sometimes struggles with difficult emotions. She's just shared: "${feelings}"
 
 Respond with deep empathy, warmth, and genuine understanding. Your response should:
 1. Always address her as "Reedaa" and acknowledge what she's feeling with genuine validation
@@ -34,15 +30,18 @@ Respond with deep empathy, warmth, and genuine understanding. Your response shou
 6. End with warmth, hope, or gentle encouragement
 
 Keep it conversational, sweet, and comforting - like a caring friend who truly sees her and understands. Don't be preachy or clinical. Be genuinely warm, use a gentle and soothing tone, and speak from the heart. Sometimes what she needs most is just to feel heard and understood.`
-        }]
-      })
-    });
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 1000
+          }
+        })
+      }
+    );
 
     const data = await response.json();
-    const aiResponse = data.content
-      .filter(item => item.type === 'text')
-      .map(item => item.text)
-      .join('\n');
+    const aiResponse = data.candidates[0].content.parts[0].text;
 
     return {
       statusCode: 200,
@@ -56,14 +55,3 @@ Keep it conversational, sweet, and comforting - like a caring friend who truly s
     };
   }
 };
-```
-
-4. Commit changes
-
----
-
-**After committing, your GitHub should show:**
-```
-netlify/
-  └── functions/
-      └── get-comfort.js
