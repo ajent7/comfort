@@ -1,0 +1,215 @@
+const { useState, useEffect } = React;
+
+const Heart = ({ className, fill, style }) => (
+  <svg className={className} style={style} fill={fill || "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+  </svg>
+);
+
+const Sparkles = ({ className, style }) => (
+  <svg className={className} style={style} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+  </svg>
+);
+
+const ComfortSpace = () => {
+  const [feelings, setFeelings] = useState('');
+  const [response, setResponse] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentAffirmation, setCurrentAffirmation] = useState(0);
+
+  const affirmations = [
+    "It's okay to feel what you're feeling, Reedaa",
+    "Your feelings are valid and they matter",
+    "This moment will pass, and you'll feel lighter again",
+    "You're not alone in this - you're deeply loved",
+    "Being gentle with yourself is not weakness, it's wisdom",
+    "You don't have to carry everything on your own",
+    "It's okay to have bad days - they don't define you",
+    "You deserve compassion, especially from yourself",
+    "Your heart is tender, and that's a beautiful thing",
+    "You're doing better than you think you are"
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentAffirmation((prev) => (prev + 1) % affirmations.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const generateResponse = async () => {
+    if (!feelings.trim()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Call Netlify Function
+      const apiResponse = await fetch('/.netlify/functions/get-comfort', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          feelings: feelings
+        })
+      });
+
+      const data = await apiResponse.json();
+      
+      if (data.response) {
+        setResponse(data.response);
+      } else {
+        throw new Error('No response received');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setResponse("Oh Reedaa, I'm having a little trouble connecting right now, but please know this: whatever you're going through, your feelings matter. You're not alone, and you deserve all the gentleness and understanding in the world. 💕");
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      generateResponse();
+    }
+  };
+
+  return React.createElement(
+    'div',
+    { className: "min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 relative overflow-hidden" },
+    
+    // Floating particles
+    React.createElement(
+      'div',
+      { className: "absolute inset-0 overflow-hidden pointer-events-none" },
+      [...Array(20)].map((_, i) =>
+        React.createElement('div', {
+          key: i,
+          className: "absolute rounded-full bg-pink-200 opacity-20",
+          style: {
+            width: Math.random() * 60 + 20 + 'px',
+            height: Math.random() * 60 + 20 + 'px',
+            left: Math.random() * 100 + '%',
+            top: Math.random() * 100 + '%',
+            animation: `float ${Math.random() * 10 + 15}s ease-in-out infinite`,
+            animationDelay: Math.random() * 5 + 's'
+          }
+        })
+      )
+    ),
+
+    // Styles
+    React.createElement('style', null, `
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0) translateX(0);
+        }
+        25% {
+          transform: translateY(-30px) translateX(20px);
+        }
+        50% {
+          transform: translateY(-60px) translateX(-20px);
+        }
+        75% {
+          transform: translateY(-30px) translateX(20px);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .affirmation-text {
+        animation: fadeIn 1s ease-in;
+      }
+    `),
+
+    // Main content
+    React.createElement(
+      'div',
+      { className: "relative z-10 max-w-3xl mx-auto px-6 py-12" },
+      
+      // Header
+      React.createElement(
+        'div',
+        { className: "text-center mb-8" },
+        React.createElement(
+          'div',
+          { className: "flex justify-center items-center gap-2 mb-4" },
+          React.createElement(Heart, { className: "text-pink-400 w-8 h-8", fill: "currentColor" }),
+          React.createElement('h1', { className: "text-4xl font-light text-gray-700" }, "A Safe Space for Reedaa"),
+          React.createElement(Sparkles, { className: "text-purple-400 w-8 h-8" })
+        ),
+        React.createElement('p', { className: "text-gray-600 text-lg font-light" }, "Whatever you're feeling, it's okay to feel it 💜")
+      ),
+
+      // Affirmation
+      React.createElement(
+        'div',
+        { className: "bg-white/60 backdrop-blur-sm rounded-3xl p-6 mb-8 shadow-lg border border-pink-100" },
+        React.createElement(
+          'p',
+          { 
+            key: currentAffirmation,
+            className: "text-center text-purple-700 text-lg font-light italic affirmation-text"
+          },
+          `✨ ${affirmations[currentAffirmation]} ✨`
+        )
+      ),
+
+      // Main card
+      React.createElement(
+        'div',
+        { className: "bg-white/70 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-purple-100" },
+        React.createElement('label', { className: "block text-gray-700 text-lg font-light mb-3" }, "What's on your heart today, Reedaa?"),
+        React.createElement('textarea', {
+          value: feelings,
+          onChange: (e) => setFeelings(e.target.value),
+          onKeyPress: handleKeyPress,
+          placeholder: "I'm feeling... / I'm struggling with... / I'm worried about... / I miss... / Today I...",
+          className: "w-full h-32 p-4 border-2 border-purple-200 rounded-2xl focus:outline-none focus:border-purple-400 resize-none bg-white/80 text-gray-700 placeholder-gray-400"
+        }),
+        React.createElement('p', { className: "text-sm text-gray-500 mt-2 font-light" }, "Press Shift + Enter or click the button below"),
+        React.createElement(
+          'button',
+          {
+            onClick: generateResponse,
+            disabled: isLoading || !feelings.trim(),
+            className: "w-full mt-4 bg-gradient-to-r from-pink-300 to-purple-300 text-white py-3 rounded-2xl font-light text-lg hover:from-pink-400 hover:to-purple-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          },
+          isLoading ? 'Listening with care...' : 'Share with me 💕'
+        ),
+        response && React.createElement(
+          'div',
+          { className: "mt-6 p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-200 shadow-inner" },
+          React.createElement(
+            'div',
+            { className: "flex items-start gap-3 mb-3" },
+            React.createElement(Heart, { className: "text-pink-400 w-6 h-6 flex-shrink-0 mt-1", fill: "currentColor" }),
+            React.createElement('p', { className: "text-gray-700 leading-relaxed whitespace-pre-wrap font-light" }, response)
+          )
+        )
+      ),
+
+      // Footer
+      React.createElement(
+        'div',
+        { className: "text-center mt-8" },
+        React.createElement('p', { className: "text-gray-500 text-sm font-light italic" }, "You're never alone in what you feel 🌸")
+      )
+    )
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(ComfortSpace));
